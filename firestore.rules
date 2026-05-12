@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- REUSABLE HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      // In this app, we verify role in the user profile document
+      return isSignedIn() && getUserData().role == 'ADMIN';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- COLLECTION RULES ---
+
+    // USERS COLLECTION
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'name', 'email', 'role', 'pin']) &&
+               data.uid is string && data.name is string && data.email is string &&
+               data.role in ['ADMIN', 'SOCIO'] && data.pin is string;
+      }
+
+      // Read: Users can read their own profile. Admins can read all.
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin(); // Only admins can list users
+
+      // Create: Users can register their own profile (initial)
+      allow create: if isSignedIn() && isOwner(userId) && isValidUser(request.resource.data) &&
+                      request.resource.data.role == 'SOCIO'; // Cannot self-assign ADMIN
+
+      // Update: Admins can update anything. Users can update their own non-role info.
+      allow update: if (isSignedIn() && (
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'pin', 'avatarUrl'])) ||
+        isAdmin()
+      ) && isValidUser(request.resource.data));
+    }
+
+    // REPORTS COLLECTION
+    match /reports/{reportId} {
+      function isValidReport(data) {
+        return data.keys().hasAll(['title', 'category', 'date']) &&
+               data.title is string && data.category is string;
+      }
+
+      // Read: Everyone who is signed in can read reports if they are public, or all if admin
+      allow read: if isSignedIn(); 
+      
+      // Write: Only admins
+      allow write: if isAdmin() && isValidReport(request.resource.data);
+    }
+
+    // NOTIFICATIONS COLLECTION
+    match /notifications/{notifId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

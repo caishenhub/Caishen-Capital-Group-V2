@@ -1,0 +1,244 @@
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Lock, AlertCircle, X, ChevronRight, UserPlus } from 'lucide-react';
+import { findValue, warmUpCache, fetchUserByEmailOrId, setSecuritySession } from '../../lib/googleSheets';
+
+const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [identifier, setIdentifier] = useState('');
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [foundUser, setFoundUser] = useState<any>(null);
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const MAX_ATTEMPTS = 5;
+
+  useEffect(() => {
+    try {
+      const encryptedSession = localStorage.getItem('ccg_session_vault');
+      if (encryptedSession) {
+        const session = JSON.parse(atob(encryptedSession));
+        if (session && session.ts && (Date.now() - session.ts < 1000 * 60 * 60 * 24)) {
+          const isAdmin = !!session.isAdmin || String(session.uid || '').startsWith('#ADM') || String(session.uid || '').startsWith('ADMIN');
+          setSecuritySession(session.uid, isAdmin);
+          setIsAuthenticated(true);
+          warmUpCache();
+        } else {
+          localStorage.removeItem('ccg_session_vault');
+        }
+      }
+    } catch (e) {
+      localStorage.removeItem('ccg_session_vault');
+    }
+    setIsLoading(false);
+  }, []);
+
+  const handleIdentifierSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isBlocked) {
+      setError('Acceso bloqueado por seguridad. Reintente más tarde.');
+      return;
+    }
+    const input = identifier.toLowerCase().trim();
+    if (!input) return;
+    
+    setError('');
+    setIsSyncing(true);
+
+    try {
+      // Búsqueda directa en Google Sheets vía Engine v4.5
+      const user = await fetchUserByEmailOrId(input);
+
+      if (user) {
+        setFoundUser(user);
+        setShowPinModal(true);
+        setError('');
+      } else {
+        setError('Socio no encontrado en el padrón oficial.');
+      }
+    } catch (e) {
+      setError('Error de conexión con el servidor.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const validateAccess = useCallback(async () => {
+    if (!foundUser || pin.length !== 4) return;
+    if (isBlocked) return;
+    
+    setIsSyncing(true);
+    const userPin = String(findValue(foundUser, ['PIN_ACCESO', 'pin', 'clave']) || '');
+
+    if (userPin === pin) {
+      const uid = String(findValue(foundUser, ['UID_SOCIO', 'uid']) || '');
+      const role = String(findValue(foundUser, ['ROL', 'PERFIL', 'ROLE', 'TIPO_USUARIO']) || '').toUpperCase();
+      
+      const isAdmin = uid.startsWith('#ADM') || uid.startsWith('ADMIN') || role === 'ADMIN' || role === 'ADMINISTRADOR';
+      
+      const sessionData = { 
+        uid: uid, 
+        name: findValue(foundUser, ['NOMBRE_COMPLETO', 'name', 'nombre']), 
+        email: findValue(foundUser, ['EMAIL_SOCIO', 'email']),
+        shares: parseInt(findValue(foundUser, ['ACCIONES_POSEIDAS', 'shares', 'acciones']) || '0'),
+        isAdmin: isAdmin,
+        ts: Date.now() 
+      };
+      
+      localStorage.setItem('ccg_session_vault', btoa(JSON.stringify(sessionData)));
+      setSecuritySession(uid, isAdmin);
+      
+      setIsAuthenticated(true);
+      setShowPinModal(false);
+      setAttempts(0);
+    } else {
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      setError('PIN Incorrecto');
+      setPin('');
+      setIsSyncing(false);
+
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setIsBlocked(true);
+        setError(`Demasiados intentos. Bloqueo de seguridad activado.`);
+        setTimeout(() => {
+          setIsBlocked(false);
+          setAttempts(0);
+        }, 1000 * 60 * 5); 
+      }
+    }
+  }, [foundUser, pin, attempts, isBlocked]);
+
+  const addDigit = (digit: string) => {
+    if (pin.length < 4) setPin(prev => prev + digit);
+  };
+
+  const removeDigit = () => {
+    setPin(prev => prev.slice(0, -1));
+  };
+
+  useEffect(() => {
+    if (pin.length === 4) {
+      validateAccess();
+    }
+  }, [pin, validateAccess]);
+
+  useEffect(() => {
+    if (!showPinModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (/^[0-9]$/.test(e.key)) addDigit(e.key);
+      else if (e.key === 'Backspace') removeDigit();
+      else if (e.key === 'Escape') setShowPinModal(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showPinModal, pin]);
+
+  if (isLoading) return null;
+  if (isAuthenticated) return <>{children}</>;
+
+  return (
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-6 overflow-hidden bg-accent bg-cover bg-center transition-opacity duration-1000"
+      style={{ 
+        backgroundImage: "url('https://i.ibb.co/HL7RGf9F/Chat-GPT-Image-8-ene-2026-10-46-40-p-m.png')",
+        background: "linear-gradient(rgba(29, 28, 45, 0.4), rgba(29, 28, 45, 0.4)), #1d1c2d url('https://i.ibb.co/HL7RGf9F/Chat-GPT-Image-8-ene-2026-10-46-40-p-m.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }}
+    >
+      <div className="absolute inset-0 backdrop-blur-[2px]" />
+      
+      <div className="relative w-full max-w-[400px] bg-white rounded-[32px] md:rounded-[40px] shadow-2xl border border-white/20 p-8 md:p-10 space-y-6 md:space-y-8 animate-in fade-in zoom-in-95 duration-700">
+        <div className="flex flex-col items-center text-center space-y-4 md:space-y-6">
+          <img 
+            src="https://i.ibb.co/zT3RhhT9/CAISHEN-NO-FONDO-AZUL-1.png" 
+            alt="Caishen Capital Group" 
+            className="h-20 md:h-28 w-auto object-contain" 
+            referrerPolicy="no-referrer"
+          />
+          <div className="space-y-1">
+            <h1 className="text-xl md:text-2xl font-black text-accent tracking-tighter uppercase">Portal Accionistas</h1>
+            <div className="flex items-center justify-center gap-1.5 pt-1">
+              <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">Acceso Seguro</span>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleIdentifierSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[9px] font-black text-text-muted uppercase tracking-widest ml-1">Correo o ID de Socio</label>
+            <input 
+              type="text" 
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="ej: #USR-008"
+              className="w-full bg-surface-subtle border-2 border-surface-border rounded-2xl px-5 py-4 text-sm font-bold text-accent focus:border-primary focus:ring-0 transition-all outline-none"
+            />
+          </div>
+          {error && !showPinModal && (
+            <div className="flex items-center gap-2 text-red-600 text-[10px] font-black uppercase bg-red-50 p-3 rounded-xl">
+              <AlertCircle size={14} />
+              {error}
+            </div>
+          )}
+          <button 
+            type="submit"
+            disabled={isSyncing}
+            className="w-full bg-accent text-primary font-black py-4 md:py-5 rounded-2xl flex items-center justify-center gap-2 hover:bg-black transition-all shadow-xl active:scale-95 uppercase text-[10px] md:text-xs tracking-[0.2em] disabled:opacity-50"
+          >
+            {isSyncing ? 'Validando...' : 'Entrar'}
+            <ChevronRight size={18} />
+          </button>
+        </form>
+
+        <div className="pt-4 border-t border-gray-100">
+           <button 
+             onClick={() => window.open('https://registro.caishencapitalgroup.com/', '_blank')}
+             className="w-full bg-surface-subtle text-accent font-black py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-accent hover:text-white transition-all uppercase text-[9px] tracking-widest border border-surface-border"
+           >
+             <UserPlus size={16} />
+             Registrar Nueva Cuenta
+           </button>
+        </div>
+      </div>
+
+      {showPinModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 pt-safe pb-safe">
+          <div className="absolute inset-0 bg-accent/90 backdrop-blur-md animate-in fade-in" onClick={() => !isSyncing && setShowPinModal(false)} />
+          <div className={`relative w-full max-w-[360px] bg-white rounded-[32px] md:rounded-[40px] shadow-2xl p-6 md:p-10 flex flex-col items-center animate-in zoom-in-95 ${error === 'PIN Incorrecto' ? 'animate-shake' : ''}`}>
+            <button onClick={() => setShowPinModal(false)} className="absolute top-4 right-4 text-text-muted hover:bg-gray-100 p-2 rounded-full"><X size={20} /></button>
+            <div className="size-16 md:size-20 bg-accent rounded-[20px] md:rounded-[24px] flex items-center justify-center text-primary shadow-2xl mb-4 md:mb-6"><Lock size={28} /></div>
+            <h3 className="text-lg md:text-xl font-black text-accent uppercase tracking-tighter mb-1">Ingrese su PIN</h3>
+            <p className="text-[9px] text-text-secondary font-black uppercase tracking-widest mb-6 md:mb-8 text-center">Protección de Cuenta</p>
+            
+            <div className="flex justify-center gap-2.5 mb-8 md:mb-10">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className={`size-12 md:size-14 rounded-2xl border-2 flex items-center justify-center transition-all ${pin.length > i ? 'border-primary bg-primary/5' : 'border-surface-border'}`}>
+                  {pin.length > i && <div className="size-3 bg-accent rounded-full animate-in zoom-in" />}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5 w-full mb-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <button key={num} onClick={() => addDigit(num.toString())} className="h-14 md:h-16 rounded-2xl bg-surface-subtle text-accent font-black text-xl hover:bg-primary transition-all active:scale-90">{num}</button>
+              ))}
+              <button onClick={removeDigit} className="h-14 md:h-16 rounded-2xl bg-red-50 text-red-600 font-black text-[9px] uppercase tracking-widest">Borrar</button>
+              <button onClick={() => addDigit('0')} className="h-14 md:h-16 rounded-2xl bg-surface-subtle text-accent font-black text-xl hover:bg-primary transition-all active:scale-90">0</button>
+              <button onClick={validateAccess} className="h-14 md:h-16 rounded-2xl bg-accent text-primary font-black text-[9px] uppercase tracking-widest">OK</button>
+            </div>
+            
+            {error === 'PIN Incorrecto' && <p className="text-red-600 text-[9px] font-black uppercase tracking-widest mt-2">PIN Erróneo</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AuthGate;

@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "User": {
+      "title": "Usuario / Accionista",
+      "description": "Perfil central de accionistas de Caishen Capital Group.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID institucional del socio (ej: #ADM-001 o CCG-001)" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["ADMIN", "SOCIO"] },
+        "pin": { "type": "string", "description": "PIN de acceso de 4-6 dígitos" },
+        "shares": { "type": "number" },
+        "memberSince": { "type": "string", "format": "date-time" },
+        "avatarUrl": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["uid", "name", "email", "role", "pin"]
+    },
+    "Report": {
+      "title": "Reporte Administrativo",
+      "description": "Documentos e informes oficiales para los socios.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "category": { "type": "string" },
+        "summary": { "type": "string" },
+        "highlight": { "type": "string" },
+        "sections": { "type": "array" },
+        "notaImportante": { "type": "string" },
+        "visibleEnTodos": { "type": "boolean" },
+        "ordenForzado": { "type": "number" },
+        "color": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "date"]
+    },
+    "Notification": {
+      "title": "Notificación Corporativa",
+      "description": "Alertas y noticias para el dashboard del socio.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["Urgent", "Info", "Success"] },
+        "fullContent": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["title", "date", "description", "type"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "Colección de perfiles de usuario y credenciales de acceso."
+    },
+    "reports": {
+      "schema": "Report",
+      "description": "Informes oficiales accesibles según perfil."
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "Notificaciones globales y dirigidas."
+    }
+  }
+}
