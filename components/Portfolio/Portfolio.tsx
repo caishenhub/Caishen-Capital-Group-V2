@@ -100,7 +100,7 @@ const Portfolio: React.FC = () => {
           <p className="text-text-secondary text-xs md:text-lg font-medium mt-2">Administración privada de activos y exposición de capital corporativo.</p>
         </div>
         <a 
-          href="https://libros-de-operaciones.vercel.app/"
+          href="https://librosdeoperaciones.caishencapitalgroup.com/"
           target="_blank"
           rel="noopener noreferrer"
           className="w-full md:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-[#1d1c2d] text-white hover:bg-black rounded-2xl transition-all shadow-xl active:scale-95 group"

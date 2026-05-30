@@ -801,20 +801,29 @@ const ShareholderProfile: React.FC<ShareholderProfileProps> = ({ user, onBack })
               {/* TABS DE MÉTODOS */}
               <div className="grid grid-cols-1 sm:grid-cols-3 md:flex bg-surface-subtle p-1.5 rounded-2xl border border-surface-border w-full md:w-fit gap-1">
                 <button 
-                  onClick={() => setActiveWithdrawalTab('debit')}
-                  className={`flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase transition-all ${activeWithdrawalTab === 'debit' ? 'bg-white text-accent shadow-md' : 'text-text-muted hover:text-accent'}`}
+                  onClick={() => !registeredAccount && setActiveWithdrawalTab('debit')}
+                  disabled={!!registeredAccount && activeWithdrawalTab !== 'debit'}
+                  className={`flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase transition-all ${
+                    activeWithdrawalTab === 'debit' ? 'bg-white text-accent shadow-md' : 'text-text-muted hover:text-accent'
+                  } ${registeredAccount && activeWithdrawalTab !== 'debit' ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
                   <Globe size={16} /> <span className="whitespace-nowrap">Cuenta Internacional</span>
                 </button>
                 <button 
-                  onClick={() => setActiveWithdrawalTab('bank')}
-                  className={`flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase transition-all ${activeWithdrawalTab === 'bank' ? 'bg-white text-accent shadow-md' : 'text-text-muted hover:text-accent'}`}
+                  onClick={() => !registeredAccount && setActiveWithdrawalTab('bank')}
+                  disabled={!!registeredAccount && activeWithdrawalTab !== 'bank'}
+                  className={`flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase transition-all ${
+                    activeWithdrawalTab === 'bank' ? 'bg-white text-accent shadow-md' : 'text-text-muted hover:text-accent'
+                  } ${registeredAccount && activeWithdrawalTab !== 'bank' ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
                   <Landmark size={16} /> <span className="whitespace-nowrap">Cuenta Bancaria</span>
                 </button>
                 <button 
-                  onClick={() => setActiveWithdrawalTab('crypto')}
-                  className={`flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase transition-all ${activeWithdrawalTab === 'crypto' ? 'bg-white text-accent shadow-md' : 'text-text-muted hover:text-accent'}`}
+                  onClick={() => !registeredAccount && setActiveWithdrawalTab('crypto')}
+                  disabled={!!registeredAccount && activeWithdrawalTab !== 'crypto'}
+                  className={`flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase transition-all ${
+                    activeWithdrawalTab === 'crypto' ? 'bg-white text-accent shadow-md' : 'text-text-muted hover:text-accent'
+                  } ${registeredAccount && activeWithdrawalTab !== 'crypto' ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
                   <Bitcoin size={16} /> <span className="whitespace-nowrap">Billetera Crypto</span>
                 </button>
@@ -905,15 +914,35 @@ const ShareholderProfile: React.FC<ShareholderProfileProps> = ({ user, onBack })
                         <div className="space-y-2">
                            <label className="text-[10px] font-black text-accent uppercase tracking-widest ml-1">Tipo de Identificación</label>
                            <div className="relative">
-                             <select value={formData.docType} onChange={(e) => setFormData({...formData, docType: e.target.value})} className="w-full bg-white border border-surface-border rounded-2xl px-5 py-4 text-sm font-bold text-accent appearance-none bg-none focus:border-primary transition-all shadow-sm pr-12">
-                               <option>CC</option><option>CE</option><option>Pasaporte</option><option>NIT</option>
-                             </select>
-                             <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
+                              <select 
+                                value={formData.docType} 
+                                onChange={(e) => setFormData({...formData, docType: e.target.value})} 
+                                disabled={!!registeredAccount}
+                                className={`w-full border rounded-2xl px-5 py-4 text-sm font-bold appearance-none bg-none transition-all shadow-sm pr-12 ${
+                                  registeredAccount 
+                                    ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                                    : 'bg-white border-surface-border text-accent focus:border-primary'
+                                }`}
+                              >
+                                <option>CC</option><option>CE</option><option>Pasaporte</option><option>NIT</option>
+                              </select>
+                              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
                            </div>
                         </div>
                         <div className="space-y-2">
                            <label className="text-[10px] font-black text-accent uppercase tracking-widest ml-1">Número de Identificación</label>
-                           <input type="text" value={formData.docNumber} onChange={(e) => setFormData({...formData, docNumber: e.target.value})} className="w-full bg-white border border-surface-border rounded-2xl px-5 py-4 text-sm font-bold text-accent focus:border-primary transition-all shadow-sm" placeholder="000.000.000" />
+                           <input 
+                             type="text" 
+                             value={formData.docNumber} 
+                             onChange={(e) => setFormData({...formData, docNumber: e.target.value})} 
+                             disabled={!!registeredAccount}
+                             className={`w-full border rounded-2xl px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                               registeredAccount 
+                                 ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                                 : 'bg-white border-surface-border text-accent focus:border-primary'
+                             }`} 
+                             placeholder="000.000.000" 
+                           />
                         </div>
                       </>
                     )}
@@ -922,13 +951,33 @@ const ShareholderProfile: React.FC<ShareholderProfileProps> = ({ user, onBack })
                        <label className="text-[10px] font-black text-accent uppercase tracking-widest ml-1">{activeWithdrawalTab === 'crypto' ? 'Criptomoneda' : 'Banco Emisor'}</label>
                        {activeWithdrawalTab === 'crypto' ? (
                          <div className="relative">
-                           <select value={formData.cryptoCurrency} onChange={(e) => setFormData({...formData, cryptoCurrency: e.target.value})} className="w-full bg-white border border-surface-border rounded-2xl px-5 py-4 text-sm font-bold text-accent appearance-none bg-none focus:border-primary transition-all shadow-sm pr-12">
-                             <option>USDT (Tether)</option><option>USDC (USD Coin)</option><option>BTC (Bitcoin)</option>
-                           </select>
-                           <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
+                            <select 
+                              value={formData.cryptoCurrency} 
+                              onChange={(e) => setFormData({...formData, cryptoCurrency: e.target.value})} 
+                              disabled={!!registeredAccount}
+                              className={`w-full border rounded-2xl px-5 py-4 text-sm font-bold appearance-none bg-none transition-all shadow-sm pr-12 ${
+                                registeredAccount 
+                                  ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                                  : 'bg-white border-surface-border text-accent focus:border-primary'
+                              }`}
+                            >
+                              <option>USDT (Tether)</option><option>USDC (USD Coin)</option><option>BTC (Bitcoin)</option>
+                            </select>
+                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
                          </div>
                        ) : (
-                         <input type="text" value={formData.bankName} onChange={(e) => setFormData({...formData, bankName: e.target.value})} className="w-full bg-white border border-surface-border rounded-2xl px-5 py-4 text-sm font-bold text-accent focus:border-primary transition-all shadow-sm" placeholder="Ej. Bancolombia" />
+                         <input 
+                           type="text" 
+                           value={formData.bankName} 
+                           onChange={(e) => setFormData({...formData, bankName: e.target.value})} 
+                           disabled={!!registeredAccount}
+                           className={`w-full border rounded-2xl px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                             registeredAccount 
+                               ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                               : 'bg-white border-surface-border text-accent focus:border-primary'
+                           }`} 
+                           placeholder="Ej. Bancolombia" 
+                         />
                        )}
                     </div>
 
@@ -936,13 +985,33 @@ const ShareholderProfile: React.FC<ShareholderProfileProps> = ({ user, onBack })
                        <label className="text-[10px] font-black text-accent uppercase tracking-widest ml-1">{activeWithdrawalTab === 'crypto' ? 'Red de Protocolo' : 'Tipo de Cuenta'}</label>
                        {activeWithdrawalTab === 'crypto' ? (
                          <div className="relative">
-                           <select value={formData.cryptoNetwork} onChange={(e) => setFormData({...formData, cryptoNetwork: e.target.value})} className="w-full bg-white border border-surface-border rounded-2xl px-5 py-4 text-sm font-bold text-accent appearance-none bg-none focus:border-primary transition-all shadow-sm pr-12">
-                             <option>TRC20 (Tron)</option><option>ERC20 (Ethereum)</option><option>BEP20 (BSC)</option><option>POLYGON</option>
-                           </select>
-                           <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
+                            <select 
+                              value={formData.cryptoNetwork} 
+                              onChange={(e) => setFormData({...formData, cryptoNetwork: e.target.value})} 
+                              disabled={!!registeredAccount}
+                              className={`w-full border rounded-2xl px-5 py-4 text-sm font-bold appearance-none bg-none transition-all shadow-sm pr-12 ${
+                                registeredAccount 
+                                  ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                                  : 'bg-white border-surface-border text-accent focus:border-primary'
+                              }`}
+                            >
+                              <option>TRC20 (Tron)</option><option>ERC20 (Ethereum)</option><option>BEP20 (BSC)</option><option>POLYGON</option>
+                            </select>
+                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
                          </div>
                        ) : (
-                         <input type="text" value={formData.accountType} onChange={(e) => setFormData({...formData, accountType: e.target.value})} className="w-full bg-white border border-surface-border rounded-2xl px-5 py-4 text-sm font-bold text-accent focus:border-primary transition-all shadow-sm" placeholder="Ej. Ahorros" />
+                         <input 
+                           type="text" 
+                           value={formData.accountType} 
+                           onChange={(e) => setFormData({...formData, accountType: e.target.value})} 
+                           disabled={!!registeredAccount}
+                           className={`w-full border rounded-2xl px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                             registeredAccount 
+                               ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                               : 'bg-white border-surface-border text-accent focus:border-primary'
+                           }`} 
+                           placeholder="Ej. Ahorros" 
+                         />
                        )}
                     </div>
                   </div>
@@ -955,7 +1024,12 @@ const ShareholderProfile: React.FC<ShareholderProfileProps> = ({ user, onBack })
                           type="text" 
                           value={activeWithdrawalTab === 'crypto' ? formData.walletAddress : formData.accountNumber} 
                           onChange={(e) => setFormData({...formData, [activeWithdrawalTab === 'crypto' ? 'walletAddress' : 'accountNumber']: e.target.value})} 
-                          className="w-full bg-white border border-surface-border rounded-2xl pl-14 pr-5 py-4 text-sm font-bold text-accent focus:border-primary transition-all shadow-sm" 
+                          disabled={!!registeredAccount}
+                          className={`w-full border rounded-2xl pl-14 pr-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                            registeredAccount 
+                              ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                              : 'bg-white border-surface-border text-accent focus:border-primary'
+                          }`} 
                           placeholder={activeWithdrawalTab === 'crypto' ? "Péguela aquí desde su Exchange..." : "Ingrese el número de producto..."} 
                         />
                      </div>
@@ -970,7 +1044,12 @@ const ShareholderProfile: React.FC<ShareholderProfileProps> = ({ user, onBack })
                             type="text" 
                             value={activeWithdrawalTab === 'crypto' ? formData.exchange : formData.country} 
                             onChange={(e) => setFormData({...formData, [activeWithdrawalTab === 'crypto' ? 'exchange' : 'country']: e.target.value})} 
-                            className="w-full bg-white border border-surface-border rounded-2xl pl-14 pr-5 py-4 text-sm font-bold text-accent focus:border-primary transition-all shadow-sm" 
+                            disabled={!!registeredAccount}
+                            className={`w-full border rounded-2xl pl-14 pr-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                              registeredAccount 
+                                ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                                : 'bg-white border-surface-border text-accent focus:border-primary'
+                            }`} 
                             placeholder={activeWithdrawalTab === 'crypto' ? "Ej. Binance, Ledger" : "Ej. Colombia"} 
                           />
                        </div>
@@ -978,27 +1057,90 @@ const ShareholderProfile: React.FC<ShareholderProfileProps> = ({ user, onBack })
                     {activeWithdrawalTab !== 'crypto' && (
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-accent uppercase tracking-widest ml-1">Código SWIFT / BIC (Opcional)</label>
-                        <input type="text" value={formData.swiftCode} onChange={(e) => setFormData({...formData, swiftCode: e.target.value})} className="w-full bg-white border border-surface-border rounded-2xl px-5 py-4 text-sm font-bold text-accent focus:border-primary transition-all shadow-sm" placeholder="Opcional" />
+                        <input 
+                          type="text" 
+                          value={formData.swiftCode} 
+                          onChange={(e) => setFormData({...formData, swiftCode: e.target.value})} 
+                          disabled={!!registeredAccount}
+                          className={`w-full border rounded-2xl px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                            registeredAccount 
+                              ? 'bg-surface-subtle border-surface-border text-text-muted cursor-not-allowed opacity-85' 
+                              : 'bg-white border-surface-border text-accent focus:border-primary'
+                          }`} 
+                          placeholder="Opcional" 
+                        />
                       </div>
                     )}
                   </div>
 
-                  <div className="bg-[#f1f8ff] border border-[#d1e9ff] rounded-[24px] p-6 flex items-start gap-5">
-                    <InfoIcon className="text-[#3b82f6] shrink-0 mt-0.5" size={24} />
-                    <p className="text-[11px] text-[#1e40af] font-bold leading-relaxed">
-                      <span className="font-black">Verificación de Protocolo:</span> Asegúrese de seleccionar la red correspondiente al activo enviado. La selección errónea de red en dispersiones crypto resultará en la <span className="text-red-600">pérdida irreversible de fondos</span>.
-                    </p>
-                  </div>
+                  {registeredAccount ? (
+                    <div className={`border rounded-[24px] p-6 flex items-start gap-5 transition-all ${
+                      registeredAccount.requestPending 
+                        ? 'bg-amber-50/70 border-amber-100 text-amber-850' 
+                        : 'bg-neutral-50/70 border-neutral-200 text-neutral-800'
+                    }`}>
+                      {registeredAccount.requestPending ? (
+                        <Clock className="text-amber-500 shrink-0 mt-0.5 animate-pulse" size={24} />
+                      ) : (
+                        <ShieldCheck className="text-emerald-500 shrink-0 mt-0.5" size={24} />
+                      )}
+                      <div>
+                        {registeredAccount.requestPending ? (
+                          <>
+                            <h4 className="text-[11px] font-black text-amber-800 uppercase tracking-widest mb-1">Solicitud de Cambio en Curso</h4>
+                            <p className="text-[11px] leading-relaxed font-bold text-amber-900/80">
+                              Su petición de modificación para la cuenta registrada está siendo evaluada por el Comité de Cumplimiento. Nos comunicaremos con usted si se requieren soportes adicionales.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <h4 className="text-[11px] font-black text-accent uppercase tracking-widest mb-1">Canal Vinculado Legitimado</h4>
+                            <p className="text-[11px] leading-relaxed font-bold text-text-secondary">
+                              Este método se encuentra bloqueado por motivos de control anti-fraude y protección de patrimonio. Para actualizar o cambiar su canal de dispersión oficial, envíe una solicitud de autorización al Comité Administrativo.
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-[#f1f8ff] border border-[#d1e9ff] rounded-[24px] p-6 flex items-start gap-5">
+                      <InfoIcon className="text-[#3b82f6] shrink-0 mt-0.5" size={24} />
+                      <p className="text-[11px] text-[#1e40af] font-bold leading-relaxed">
+                        <span className="font-black">Verificación de Protocolo:</span> Asegúrese de seleccionar la red correspondiente al activo enviado. La selección errónea de red en dispersiones crypto resultará en la <span className="text-red-600">pérdida irreversible de fondos</span>.
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="flex justify-end pt-4">
-                     <button 
-                       onClick={() => setShowConfirm(true)}
-                       disabled={isSavingAccount || (activeWithdrawalTab === 'crypto' ? !formData.walletAddress : !formData.accountNumber)}
-                       className="flex items-center gap-4 px-12 py-5 bg-accent text-primary rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-2xl hover:bg-black transition-all disabled:opacity-30 active:scale-95 group"
-                     >
-                       {isSavingAccount ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} className="group-hover:scale-110 transition-transform" />}
-                       Registrar Canal Oficial
-                     </button>
+                     {registeredAccount ? (
+                       <button 
+                         onClick={handleSupportRequest}
+                         disabled={isRequestingSupport || registeredAccount.requestPending}
+                         className={`flex items-center gap-4 px-12 py-5 rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 group ${
+                           registeredAccount.requestPending
+                             ? 'bg-neutral-100 text-text-muted border border-surface-border cursor-not-allowed shadow-none opacity-60'
+                             : 'bg-accent text-primary hover:bg-black'
+                         }`}
+                       >
+                         {isRequestingSupport ? (
+                           <Loader2 size={20} className="animate-spin text-primary" />
+                         ) : registeredAccount.requestPending ? (
+                           <Clock size={20} />
+                         ) : (
+                           <Lock size={20} className="group-hover:scale-110 transition-transform" />
+                         )}
+                         {registeredAccount.requestPending ? 'Cambio Solicitado' : 'Solicitar Cambio de Canal'}
+                       </button>
+                     ) : (
+                       <button 
+                         onClick={() => setShowConfirm(true)}
+                         disabled={isSavingAccount || (activeWithdrawalTab === 'crypto' ? !formData.walletAddress : !formData.accountNumber)}
+                         className="flex items-center gap-4 px-12 py-5 bg-accent text-primary rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-2xl hover:bg-black transition-all disabled:opacity-30 active:scale-95 group"
+                       >
+                         {isSavingAccount ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} className="group-hover:scale-110 transition-transform" />}
+                         Registrar Canal Oficial
+                       </button>
+                     )}
                   </div>
                 </div>
               </div>
